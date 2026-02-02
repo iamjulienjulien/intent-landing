@@ -1,36 +1,157 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Intent Design System — Landing
 
-## Getting Started
+Public landing & playground for **Intent Design System**.  
+This site documents the philosophy, concepts, and visual language of the system, and provides a dedicated playground to experiment with intents, variants, tones, and glows.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🌍 Purpose
+
+This repository powers the website:
+
+**https://intent.julienjulien.fr**
+
+It serves three goals:
+
+1. **Explain** the Intent Design System philosophy (editorial, narrative-first)
+2. **Document** the core concepts (intent, tone, glow, variants)
+3. **Demonstrate** the system via an isolated playground
+
+The landing itself is **editorial-first**.  
+The actual `intent-design-system` package is **only used inside the playground page**.
+
+---
+
+## 🧠 Philosophy (short version)
+
+Intent Design System starts with **meaning**, not visuals.
+
+Interfaces do not ask:
+
+> “Which color should I use?”
+
+They ask:
+
+> “What is my intent?”
+
+Visuals are consequences.
+
+For the full manifesto, see the website or `/content/manifesto`.
+
+---
+
+## 🧱 Tech Stack
+
+- **Next.js (App Router)**
+- **TypeScript**
+- **Tailwind CSS v4**
+- **npm**
+- **Vercel-ready**
+
+No CMS.  
+No runtime dependencies for the landing itself.  
+Static-first, fast, and portable.
+
+---
+
+## 🌐 Internationalization
+
+The site is fully **bilingual**:
+
+- 🇺🇸 English
+- 🇫🇷 French
+
+All editorial content lives in `/content` and is language-scoped.
+
+Example:
+
+```
+content/
+  manifesto.en.ts
+  manifesto.fr.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/
+    layout.tsx
+    page.tsx          # Landing (EN / FR)
+    playground/       # Interactive playground
+  components/
+    Landing/
+    Playground/
+  content/
+    manifesto.en.ts
+    manifesto.fr.ts
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🎮 Playground
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The `/playground` page is the **only place** where the
+`intent-design-system` package is imported.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This keeps:
 
-## Deploy on Vercel
+- the landing pure and editorial
+- the playground technical and experimental
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚀 Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:3000
+
+---
+
+## 🧭 Roadmap
+
+- [x] Editorial landing (Hero, Manifesto, Concepts)
+- [x] Language switch (EN / FR)
+- [x] Playground (IntentSurface, controls, live preview)
+- [x] Visual examples (static & interactive)
+- [x] Deployment on `intent.julienjulien.fr`
+
+---
+
+## ✨ Author
+
+**Julien Julien**  
+Developer · Designer · Narrative systems  
+🇫🇷 Angers, France
+
+- https://julienjulien.fr
+
+---
+
+## 📜 License
+
+MIT — free to use, adapt, and explore.
+
+Design with intent.
+
+---
+
+## 👋 About the developer
+
+**Julien Julien**  
+Full Stack Developer & narrative project creator.
+
+> I design sustainable digital applications and tools  
+> where code, structure, and storytelling move forward together.
+>
+> I favor clear, evolutive systems,  
+> built for the long term rather than the instant.
+
+📍 Angers, France 🇫🇷  
+🌍 https://julienjulien.fr
