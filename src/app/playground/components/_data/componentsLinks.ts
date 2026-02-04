@@ -123,9 +123,25 @@ export const COMPONENT_LINKS: ComponentLink[] = [
         badgeEmoji: emojiForBadge("Control"),
     },
     {
+        title: "IntentControlInput",
+        description:
+            "Intent-first input/textarea: standalone or wrapped by IntentControlField (insideField).",
+        href: "/playground/components/intent-control-input",
+        badge: "Control",
+        badgeEmoji: emojiForBadge("Control"),
+    },
+    {
         title: "IntentControlSelect",
         description: "Intent-first custom select: combobox + listbox, keyboard nav, glow-ready.",
         href: "/playground/components/intent-control-select",
+        badge: "Control",
+        badgeEmoji: emojiForBadge("Control"),
+    },
+    {
+        title: "IntentControlTags",
+        description:
+            "Intent-first multi-value input (tags/tokens). Standalone or wrapped by IntentControlField.",
+        href: "/playground/components/intent-control-tags",
         badge: "Control",
         badgeEmoji: emojiForBadge("Control"),
     },
