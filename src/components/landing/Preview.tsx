@@ -3,7 +3,7 @@
 import React from "react";
 import { getLocale } from "@/lib/locale/getLocale";
 import { getCopy } from "@/lib/locale/getCopy";
-import PreviewClientWrapper from "./PreviewClientWrapper";
+import PreviewTiles from "./PreviewTiles";
 
 export default async function Preview() {
     const locale = await getLocale();
@@ -20,7 +20,7 @@ export default async function Preview() {
                 </p>
             </div>
 
-            <PreviewClientWrapper items={p.tile.items} />
+            <PreviewTiles items={p.tile.items} />
 
             <div className="mt-8 text-center">
                 <a className="btn" href="/playground">
