@@ -1,0 +1,202 @@
+diff --git a/dist/index.js b/dist/index.js
+index 58333e41e4fc49f195b1138805d49b7c564f8dec..6e40fffd9ab18dd6f36f510de616d83f68b9b00b 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -2760,6 +2760,98 @@ var INTENT_CODE_VIEWER_LOCAL_PROPS_TABLE = [
+     fromSystem: false
+   }
+ ];
++// src/system/docProps.ts
++var SYSTEM_PROPS_TABLE = [
++  {
++    name: "intent",
++    description: {
++      fr: "Intent s\xE9mantique (informed/empowered/warned/threatened/themed/toned/glowed).",
++      en: "Semantic intent (informed/empowered/warned/threatened/themed/toned/glowed)."
++    },
++    type: "Intent",
++    required: false,
++    default: "DEFAULT_INTENT",
++    fromSystem: true
++  },
++  {
++    name: "variant",
++    description: {
++      fr: "Variant visuel (flat/outlined/elevated/ghost).",
++      en: "Visual variant (flat/outlined/elevated/ghost)."
++    },
++    type: "Variant",
++    required: false,
++    default: "DEFAULT_VARIANT",
++    fromSystem: true
++  },
++  {
++    name: "tone",
++    description: {
++      fr: "Override de tone (n\u2019a d\u2019effet que si intent='toned').",
++      en: "Tone override (only effective when intent='toned')."
++    },
++    type: "Tone",
++    required: false,
++    default: "DEFAULT_TONE (si toned)",
++    fromSystem: true
++  },
++  {
++    name: "toneStep",
++    description: {
++      fr: "Step Tailwind (50..950) pour \xE9claircir/assombrir les teintes (autour du step canonique 500).",
++      en: "Tailwind step (50..950) to lighten/darken tone-based colors (around the canonical 500 step)."
++    },
++    type: "ToneStep",
++    required: false,
++    default: "DEFAULT_TONE_STEP",
++    fromSystem: true
++  },
++  {
++    name: "glow",
++    description: {
++      fr: "Glow normal (true/false) ou glow esth\xE9tique (uniquement si intent='glowed').",
++      en: "Standard glow (true/false) or aesthetic glow (only when intent='glowed')."
++    },
++    type: "boolean | Glow",
++    required: false,
++    default: "false (ou glow par intent)",
++    fromSystem: true
++  },
++  {
++    name: "intensity",
++    description: {
++      fr: "Intensit\xE9 (soft/medium/strong).",
++      en: "Intensity (soft/medium/strong)."
++    },
++    type: "Intensity",
++    required: false,
++    default: "DEFAULT_INTENSITY",
++    fromSystem: true
++  },
++  {
++    name: "mode",
++    description: {
++      fr: "Mode colorim\xE9trique (dark/light).",
++      en: "Color mode (dark/light)."
++    },
++    type: "Mode",
++    required: false,
++    default: "DEFAULT_MODE",
++    fromSystem: true
++  },
++  {
++    name: "disabled",
++    description: {
++      fr: "D\xE9sactive l\u2019\xE9tat visuel (hooks + styles).",
++      en: "Disables the visual state (hooks + styles)."
++    },
++    type: "boolean",
++    required: false,
++    default: "false",
++    fromSystem: true
++  }
++];
++
+ var IntentCodeViewerPropsTable = [
+   ...INTENT_CODE_VIEWER_LOCAL_PROPS_TABLE,
+   ...SYSTEM_PROPS_TABLE
+@@ -25220,98 +25312,6 @@ function searchComponents(query) {
+     return item.key.toLowerCase().includes(q) || item.name.toLowerCase().includes(q) || item.title.toLowerCase().includes(q) || item.description.toLowerCase().includes(q) || item.badge.toLowerCase().includes(q) || item.kind.toLowerCase().includes(q) || item.tags?.some((tag) => tag.toLowerCase().includes(q));
+   });
+ }
+-
+-// src/system/docProps.ts
+-var SYSTEM_PROPS_TABLE = [
+-  {
+-    name: "intent",
+-    description: {
+-      fr: "Intent s\xE9mantique (informed/empowered/warned/threatened/themed/toned/glowed).",
+-      en: "Semantic intent (informed/empowered/warned/threatened/themed/toned/glowed)."
+-    },
+-    type: "Intent",
+-    required: false,
+-    default: "DEFAULT_INTENT",
+-    fromSystem: true
+-  },
+-  {
+-    name: "variant",
+-    description: {
+-      fr: "Variant visuel (flat/outlined/elevated/ghost).",
+-      en: "Visual variant (flat/outlined/elevated/ghost)."
+-    },
+-    type: "Variant",
+-    required: false,
+-    default: "DEFAULT_VARIANT",
+-    fromSystem: true
+-  },
+-  {
+-    name: "tone",
+-    description: {
+-      fr: "Override de tone (n\u2019a d\u2019effet que si intent='toned').",
+-      en: "Tone override (only effective when intent='toned')."
+-    },
+-    type: "Tone",
+-    required: false,
+-    default: "DEFAULT_TONE (si toned)",
+-    fromSystem: true
+-  },
+-  {
+-    name: "toneStep",
+-    description: {
+-      fr: "Step Tailwind (50..950) pour \xE9claircir/assombrir les teintes (autour du step canonique 500).",
+-      en: "Tailwind step (50..950) to lighten/darken tone-based colors (around the canonical 500 step)."
+-    },
+-    type: "ToneStep",
+-    required: false,
+-    default: "DEFAULT_TONE_STEP",
+-    fromSystem: true
+-  },
+-  {
+-    name: "glow",
+-    description: {
+-      fr: "Glow normal (true/false) ou glow esth\xE9tique (uniquement si intent='glowed').",
+-      en: "Standard glow (true/false) or aesthetic glow (only when intent='glowed')."
+-    },
+-    type: "boolean | Glow",
+-    required: false,
+-    default: "false (ou glow par intent)",
+-    fromSystem: true
+-  },
+-  {
+-    name: "intensity",
+-    description: {
+-      fr: "Intensit\xE9 (soft/medium/strong).",
+-      en: "Intensity (soft/medium/strong)."
+-    },
+-    type: "Intensity",
+-    required: false,
+-    default: "DEFAULT_INTENSITY",
+-    fromSystem: true
+-  },
+-  {
+-    name: "mode",
+-    description: {
+-      fr: "Mode colorim\xE9trique (dark/light).",
+-      en: "Color mode (dark/light)."
+-    },
+-    type: "Mode",
+-    required: false,
+-    default: "DEFAULT_MODE",
+-    fromSystem: true
+-  },
+-  {
+-    name: "disabled",
+-    description: {
+-      fr: "D\xE9sactive l\u2019\xE9tat visuel (hooks + styles).",
+-      en: "Disables the visual state (hooks + styles)."
+-    },
+-    type: "boolean",
+-    required: false,
+-    default: "false",
+-    fromSystem: true
+-  }
+-];
+ var SYSTEM_API_TABLE = [
+   {
+     name: "IntentName",

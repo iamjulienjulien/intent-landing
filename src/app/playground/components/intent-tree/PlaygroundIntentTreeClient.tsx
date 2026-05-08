@@ -7,30 +7,33 @@
 //   - mini-map
 //   - search
 //   - lineage highlight
-//   - scope modes: desc / asc / siblings / full
+//   - scope modes: desc / asc / both / siblings / full ✅
 //   - fullscreen
 //   - toolbar actions
 // - Uses node meta: tone + dates + tags
+//
+// ✅ Updates for new scope "both":
+// - Adds "both" to ScopeMode + UI select
+// - When scopeMode="asc" or "both", passes getParents accessor
+// - Fixes wrong props:
+//   - remove non-existing: searchQuery / showMiniMap / enableFullscreen / showToolbar
+//   - use: searchable + getSearchText, miniMap, fullscreenable, toolbar
+// - Keeps local "searchQuery" as a nodeIntent booster + search input text source
 
 import React, { useEffect, useMemo, useState } from "react";
 
 import {
     IntentTree,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
 
     // docs exports
     IntentTreeIdentity,
     IntentTreePropsTable,
-
-    // (optionnel si tu exportes ces defs depuis le DS)
-    // INTENT_TREE_TAGS,
-    // type IntentTreeTagKey,
-    // type IntentTreeScopeMode,
 } from "intent-design-system";
 
 import { PlaygroundComponentShell } from "../_components/PlaygroundComponentShell";
@@ -48,10 +51,10 @@ type Orientation = "vertical" | "horizontal";
 type LinkStyle = "curve" | "elbow" | "straight";
 type LayoutMode = "auto" | "custom";
 
-// align avec ton IntentTreeScopeMode
-type ScopeMode = "desc" | "asc" | "siblings" | "full";
+// align avec IntentTreeScopeMode (now includes "both")
+type ScopeMode = "desc" | "asc" | "both" | "siblings" | "full";
 
-// align avec ton IntentTreeToolbarAction
+// align avec IntentTreeToolbarAction
 type ToolbarAction =
     | "fit"
     | "reset"
@@ -62,7 +65,7 @@ type ToolbarAction =
     | "collapse_all"
     | "toggle_grid";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -173,7 +176,7 @@ type NodeDates = {
 };
 
 type NodeMeta = {
-    tone?: ToneName | "theme" | "black" | string;
+    tone?: Tone | "theme" | "black" | string;
     dates?: NodeDates;
     tags?: TagKey[];
 };
@@ -183,6 +186,10 @@ type PersonNode = {
     name: string;
     subtitle?: string;
     meta?: NodeMeta;
+
+    // For genealogical demos (optional)
+    parents?: PersonNode[];
+
     children?: PersonNode[];
 };
 
@@ -190,7 +197,7 @@ type PersonNode = {
    🏰 DATASETS
 ============================================================================ */
 
-// --- Targaryen (mini, déjà là, enrichi meta)
+// --- Targaryen (mini, enriched meta)
 const TARGARYEN_TREE: PersonNode = {
     id: "aegon-i",
     name: "Aegon I Targaryen",
@@ -244,7 +251,222 @@ const TARGARYEN_TREE: PersonNode = {
     ],
 };
 
-// --- Stark (simplifié, “tree-ish”)
+// --- Targaryen (both-ready genealogy dataset)
+// Root has parents + children; parents have their own parents; some nodes have 2 parents.
+// Good to validate scopeMode="both" + multi-parents behavior.
+
+const TARGARYEN_TREE_BOTH: PersonNode = {
+    id: "viserys-i",
+    name: "Viserys I Targaryen",
+    subtitle: "King · Pre-Dance era",
+    meta: { tone: "amber", dates: { born: "77 AC", died: "129 AC" }, tags: ["king"] },
+
+    // ✅ Parents (ancestors)
+    parents: [
+        {
+            id: "baelon",
+            name: "Baelon Targaryen",
+            subtitle: "The Spring Prince",
+            meta: {
+                tone: "cyan",
+                dates: { born: "57 AC", died: "101 AC" },
+                tags: ["prince", "heir"],
+            },
+
+            parents: [
+                {
+                    id: "jaehaerys-i",
+                    name: "Jaehaerys I",
+                    subtitle: "The Conciliator",
+                    meta: {
+                        tone: "emerald",
+                        dates: { born: "34 AC", died: "103 AC" },
+                        tags: ["king"],
+                    },
+                    parents: [
+                        {
+                            id: "aenys-i",
+                            name: "Aenys I",
+                            subtitle: "Firstborn son",
+                            meta: {
+                                tone: "green",
+                                dates: { born: "7 AC", died: "42 AC" },
+                                tags: ["king"],
+                            },
+                            parents: [
+                                {
+                                    id: "aegon-i",
+                                    name: "Aegon I Targaryen",
+                                    subtitle: "The Conqueror",
+                                    meta: {
+                                        tone: "emerald",
+                                        dates: { born: "27 BC", died: "37 AC" },
+                                        tags: ["king", "founder"],
+                                    },
+                                },
+                                {
+                                    id: "rhaenys",
+                                    name: "Rhaenys Targaryen",
+                                    subtitle: "The Queen Who Never Was (in spirit)",
+                                    meta: { tone: "pink", tags: ["queen", "consort"] },
+                                },
+                            ],
+                        },
+                        {
+                            id: "alyssa-velaryon",
+                            name: "Alyssa Velaryon",
+                            subtitle: "Queen Consort",
+                            meta: { tone: "sky", tags: ["queen", "consort"] },
+                        },
+                    ],
+                },
+                {
+                    id: "alysanne",
+                    name: "Alysanne Targaryen",
+                    subtitle: "The Good Queen",
+                    meta: {
+                        tone: "rose",
+                        dates: { born: "36 AC", died: "100 AC" },
+                        tags: ["queen"],
+                    },
+                },
+            ],
+        },
+        {
+            id: "alyssa-targaryen",
+            name: "Alyssa Targaryen",
+            subtitle: "Princess",
+            meta: { tone: "pink", dates: { born: "60 AC", died: "84 AC" }, tags: ["princess"] },
+            parents: [
+                // 👇 deliberately share ancestors with Baelon’s parents (keeps graph consistent-ish)
+                {
+                    id: "jaehaerys-i",
+                    name: "Jaehaerys I",
+                    subtitle: "The Conciliator",
+                    meta: {
+                        tone: "emerald",
+                        dates: { born: "34 AC", died: "103 AC" },
+                        tags: ["king"],
+                    },
+                },
+                {
+                    id: "alysanne",
+                    name: "Alysanne Targaryen",
+                    subtitle: "The Good Queen",
+                    meta: {
+                        tone: "rose",
+                        dates: { born: "36 AC", died: "100 AC" },
+                        tags: ["queen"],
+                    },
+                },
+            ],
+        },
+    ],
+
+    // ✅ Children (descendants)
+    children: [
+        {
+            id: "rhaenyra",
+            name: "Rhaenyra Targaryen",
+            subtitle: "The Realm’s Delight",
+            meta: {
+                tone: "rose",
+                dates: { born: "97 AC", died: "130 AC" },
+                tags: ["princess", "heir"],
+            },
+
+            // multi-parents example (for children too)
+            parents: [
+                { id: "viserys-i", name: "Viserys I Targaryen" },
+                {
+                    id: "aemma-arryn",
+                    name: "Aemma Arryn",
+                    subtitle: "Queen Consort",
+                    meta: { tone: "sky", tags: ["queen", "consort"] },
+                    parents: [
+                        {
+                            id: "rodryk-arryn",
+                            name: "Rodryk Arryn",
+                            meta: { tone: "slate", tags: ["lord"] },
+                        },
+                        {
+                            id: "daella",
+                            name: "Daella Targaryen",
+                            meta: { tone: "pink", tags: ["princess"] },
+                        },
+                    ],
+                },
+            ],
+
+            children: [
+                {
+                    id: "aegon-iii",
+                    name: "Aegon III",
+                    subtitle: "After the Dance",
+                    meta: {
+                        tone: "slate",
+                        dates: { born: "120 AC", died: "157 AC" },
+                        tags: ["king"],
+                    },
+                    parents: [
+                        { id: "rhaenyra", name: "Rhaenyra Targaryen" },
+                        {
+                            id: "daemon",
+                            name: "Daemon Targaryen",
+                            subtitle: "Prince · Rogue",
+                            meta: { tone: "zinc", tags: ["prince", "dragonrider"] },
+                        },
+                    ],
+                },
+            ],
+        },
+
+        {
+            id: "aegon-ii",
+            name: "Aegon II",
+            subtitle: "Rival claimant",
+            meta: {
+                tone: "orange",
+                dates: { born: "107 AC", died: "131 AC" },
+                tags: ["king", "heir"],
+            },
+            parents: [
+                { id: "viserys-i", name: "Viserys I Targaryen" },
+                {
+                    id: "alicent",
+                    name: "Alicent Hightower",
+                    subtitle: "Queen Consort",
+                    meta: { tone: "green", tags: ["queen", "consort"] },
+                    parents: [
+                        {
+                            id: "otto",
+                            name: "Otto Hightower",
+                            meta: { tone: "stone", tags: ["lord"] },
+                        },
+                        {
+                            id: "unknown-hightower",
+                            name: "Lady Hightower",
+                            meta: { tone: "neutral", tags: ["lady"] },
+                        },
+                    ],
+                },
+            ],
+        },
+
+        {
+            id: "daeron",
+            name: "Daeron Targaryen",
+            subtitle: "Prince",
+            meta: { tone: "cyan", tags: ["prince"] },
+            parents: [
+                { id: "viserys-i", name: "Viserys I Targaryen" },
+                { id: "alicent", name: "Alicent Hightower" },
+            ],
+        },
+    ],
+};
+
+// --- Stark (simplified)
 const STARK_TREE: PersonNode = {
     id: "rickard-stark",
     name: "Rickard Stark",
@@ -281,17 +503,13 @@ const STARK_TREE: PersonNode = {
                     subtitle: "The Raven",
                     meta: { tone: "violet", tags: ["heir"] },
                 },
-                {
-                    id: "rickon-stark",
-                    name: "Rickon Stark",
-                    meta: { tone: "stone" },
-                },
+                { id: "rickon-stark", name: "Rickon Stark", meta: { tone: "stone" } },
             ],
         },
     ],
 };
 
-// --- Bourbon (historique, volontairement compact)
+// --- Bourbon (compact)
 const BOURBON_TREE: PersonNode = {
     id: "henri-iv",
     name: "Henri IV",
@@ -347,10 +565,252 @@ const BOURBON_TREE: PersonNode = {
     ],
 };
 
-type DatasetKey = "targaryen" | "stark" | "bourbon";
+// --- Fictive genealogy (both-ready)
+// Root + 2 parents + 4 grandparents + 2 children + 4 grandchildren
+// - Fully linked via parents/children for clean "both" scope testing.
+
+const VALERIS_TREE_BOTH: PersonNode = {
+    id: "elyan-valeris",
+    name: "Elyan Valeris",
+    subtitle: "Root · Warden of the Tidegate",
+    meta: {
+        tone: "emerald",
+        dates: { born: "268 AC" },
+        tags: ["lord", "heir"],
+    },
+
+    // ✅ Parents (2)
+    parents: [
+        {
+            id: "cassian-valeris",
+            name: "Cassian Valeris",
+            subtitle: "Father · Lord of Tidegate",
+            meta: {
+                tone: "cyan",
+                dates: { born: "244 AC", died: "301 AC" },
+                tags: ["lord"],
+            },
+
+            // ✅ Grandparents (paternal)
+            parents: [
+                {
+                    id: "oren-valeris",
+                    name: "Oren Valeris",
+                    subtitle: "Grandfather · The Salt Regent",
+                    meta: {
+                        tone: "slate",
+                        dates: { born: "214 AC", died: "279 AC" },
+                        tags: ["lord", "founder"],
+                    },
+
+                    // link down for consistency (optional but nice)
+                    children: [
+                        {
+                            id: "cassian-valeris",
+                            name: "Cassian Valeris",
+                            subtitle: "Father · Lord of Tidegate",
+                            meta: { tone: "cyan", tags: ["lord"] },
+                        },
+                    ],
+                },
+                {
+                    id: "mira-valeris",
+                    name: "Mira Valeris",
+                    subtitle: "Grandmother · Keeper of Lanterns",
+                    meta: {
+                        tone: "rose",
+                        dates: { born: "219 AC", died: "287 AC" },
+                        tags: ["lady"],
+                    },
+                    children: [
+                        {
+                            id: "cassian-valeris",
+                            name: "Cassian Valeris",
+                            subtitle: "Father · Lord of Tidegate",
+                            meta: { tone: "cyan", tags: ["lord"] },
+                        },
+                    ],
+                },
+            ],
+
+            // ✅ Child link down to root
+            children: [
+                {
+                    id: "elyan-valeris",
+                    name: "Elyan Valeris",
+                    subtitle: "Root · Warden of the Tidegate",
+                    meta: { tone: "emerald", tags: ["lord", "heir"] },
+                },
+            ],
+        },
+
+        {
+            id: "selene-morn",
+            name: "Selene Morn",
+            subtitle: "Mother · House Morn of Greyfen",
+            meta: {
+                tone: "pink",
+                dates: { born: "247 AC" },
+                tags: ["lady", "consort"],
+            },
+
+            // ✅ Grandparents (maternal)
+            parents: [
+                {
+                    id: "draven-morn",
+                    name: "Draven Morn",
+                    subtitle: "Grandfather · Master of Greyfen",
+                    meta: {
+                        tone: "stone",
+                        dates: { born: "216 AC", died: "275 AC" },
+                        tags: ["lord"],
+                    },
+                    children: [
+                        {
+                            id: "selene-morn",
+                            name: "Selene Morn",
+                            subtitle: "Mother · House Morn of Greyfen",
+                            meta: { tone: "pink", tags: ["lady", "consort"] },
+                        },
+                    ],
+                },
+                {
+                    id: "lyra-morn",
+                    name: "Lyra Morn",
+                    subtitle: "Grandmother · The Quiet Hawk",
+                    meta: {
+                        tone: "violet",
+                        dates: { born: "221 AC", died: "289 AC" },
+                        tags: ["lady"],
+                    },
+                    children: [
+                        {
+                            id: "selene-morn",
+                            name: "Selene Morn",
+                            subtitle: "Mother · House Morn of Greyfen",
+                            meta: { tone: "pink", tags: ["lady", "consort"] },
+                        },
+                    ],
+                },
+            ],
+
+            // ✅ Child link down to root
+            children: [
+                {
+                    id: "elyan-valeris",
+                    name: "Elyan Valeris",
+                    subtitle: "Root · Warden of the Tidegate",
+                    meta: { tone: "emerald", tags: ["lord", "heir"] },
+                },
+            ],
+        },
+    ],
+
+    // ✅ Children (2)
+    children: [
+        {
+            id: "kael-valeris",
+            name: "Kael Valeris",
+            subtitle: "Child · Firstborn",
+            meta: {
+                tone: "amber",
+                dates: { born: "292 AC" },
+                tags: ["heir", "prince"],
+            },
+
+            parents: [
+                { id: "elyan-valeris", name: "Elyan Valeris" },
+                {
+                    id: "maera-dusk",
+                    name: "Maera Dusk",
+                    subtitle: "Spouse · House Dusk",
+                    meta: { tone: "sky", tags: ["consort", "lady"] },
+                },
+            ],
+
+            // ✅ Grandchildren (2 via this child)
+            children: [
+                {
+                    id: "lira-valeris",
+                    name: "Lira Valeris",
+                    subtitle: "Grandchild · The Bright Tide",
+                    meta: { tone: "emerald", dates: { born: "313 AC" }, tags: ["princess"] },
+                    parents: [
+                        { id: "kael-valeris", name: "Kael Valeris" },
+                        {
+                            id: "sael-rune",
+                            name: "Sael Rune",
+                            subtitle: "Spouse · House Rune",
+                            meta: { tone: "zinc", tags: ["consort"] },
+                        },
+                    ],
+                },
+                {
+                    id: "oren-jr",
+                    name: "Oren Valeris II",
+                    subtitle: "Grandchild · Saltblood",
+                    meta: { tone: "slate", dates: { born: "315 AC" }, tags: ["prince", "heir"] },
+                    parents: [
+                        { id: "kael-valeris", name: "Kael Valeris" },
+                        { id: "sael-rune", name: "Sael Rune" },
+                    ],
+                },
+            ],
+        },
+
+        {
+            id: "nyra-valeris",
+            name: "Nyra Valeris",
+            subtitle: "Child · The Storm-Scribe",
+            meta: {
+                tone: "violet",
+                dates: { born: "295 AC" },
+                tags: ["princess"],
+            },
+
+            parents: [
+                { id: "elyan-valeris", name: "Elyan Valeris" },
+                { id: "maera-dusk", name: "Maera Dusk" },
+            ],
+
+            // ✅ Grandchildren (2 via this child)
+            children: [
+                {
+                    id: "tomas-valeris",
+                    name: "Tomas Valeris",
+                    subtitle: "Grandchild · Ink & Iron",
+                    meta: { tone: "stone", dates: { born: "316 AC" }, tags: ["heir"] },
+                    parents: [
+                        { id: "nyra-valeris", name: "Nyra Valeris" },
+                        {
+                            id: "joren-veil",
+                            name: "Joren Veil",
+                            subtitle: "Spouse · House Veil",
+                            meta: { tone: "neutral", tags: ["consort"] },
+                        },
+                    ],
+                },
+                {
+                    id: "sera-valeris",
+                    name: "Sera Valeris",
+                    subtitle: "Grandchild · The Candle Map",
+                    meta: { tone: "pink", dates: { born: "318 AC" }, tags: ["princess"] },
+                    parents: [
+                        { id: "nyra-valeris", name: "Nyra Valeris" },
+                        { id: "joren-veil", name: "Joren Veil" },
+                    ],
+                },
+            ],
+        },
+    ],
+};
+
+type DatasetKey = "targaryen" | "targaryen_both" | "valeris_both" | "stark" | "bourbon";
 
 const DATASETS: Record<DatasetKey, { label: string; root: PersonNode }> = {
     targaryen: { label: "Targaryen 🐉", root: TARGARYEN_TREE },
+    targaryen_both: { label: "Targaryen (both) 🐉🧬", root: TARGARYEN_TREE_BOTH },
+    valeris_both: { label: "Valeris (fictif both) 🌊🏰", root: VALERIS_TREE_BOTH },
     stark: { label: "Stark 🐺", root: STARK_TREE },
     bourbon: { label: "Bourbon ⚜️", root: BOURBON_TREE },
 };
@@ -367,10 +827,10 @@ export default function PlaygroundIntentTreeClient() {
     const root = useMemo(() => DATASETS[dataset].root, [dataset]);
 
     // DS controls
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [disabled, setDisabled] = useState(false);
 
@@ -421,16 +881,16 @@ export default function PlaygroundIntentTreeClient() {
     const [enableFullscreen, setEnableFullscreen] = useState(true);
     const [showMiniMap, setShowMiniMap] = useState(true);
 
-    const [scopeMode, setScopeMode] = useState<ScopeMode>("desc"); // desc/asc/siblings/full
+    const [scopeMode, setScopeMode] = useState<ScopeMode>("desc"); // ✅ now includes both
     const [lineageHighlight, setLineageHighlight] = useState(true);
 
     const [searchQuery, setSearchQuery] = useState("");
 
-    // local state (we keep controlled to test callbacks)
+    // local controlled state
     const [collapsedIds, setCollapsedIds] = useState<string[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
-    // reset state when dataset changes (so you don’t carry “ghost ids”)
+    // reset state when dataset changes
     useEffect(() => {
         setCollapsedIds([]);
         setSelectedId(root?.id ?? null);
@@ -483,6 +943,16 @@ export default function PlaygroundIntentTreeClient() {
             : undefined;
 
     /* ============================================================================
+       🧩 Parents accessor (for asc/both/siblings if you add parents in data)
+       - Here we fallback to empty array (playground datasets are mostly child-only)
+       - If your DS IntentTree requires getParents only when needed, this is safe.
+    ============================================================================ */
+
+    const getParents = (n: PersonNode) => n.parents ?? [];
+
+    const needsParents = scopeMode === "asc" || scopeMode === "both" || scopeMode === "siblings";
+
+    /* ============================================================================
        🎨 Node intent override
        - (1) Search match pops
        - (2) Meta tone can override when intent="toned" (optional)
@@ -494,16 +964,13 @@ export default function PlaygroundIntentTreeClient() {
 
         if (match) return { intent: "empowered" as const };
 
-        // if you want meta tone to drive per-node “toned”
         if (n.meta?.tone) return { intent: "toned" as const, tone: n.meta.tone as any };
 
         return null;
     };
 
     /* ============================================================================
-       🧩 Default node renderer: dates (A) + tags + tone badge hint
-       - dates: A (born–died)
-       - fratrie: B (handled by tree scopeMode="siblings")
+       🧩 Node renderer
     ============================================================================ */
 
     const renderNode = ({
@@ -535,7 +1002,6 @@ export default function PlaygroundIntentTreeClient() {
                     <div className="intent-tree-nodeTags">
                         {tags.slice(0, 3).map((t) => (
                             <span key={t} className="intent-tree-nodeTag">
-                                {/* si tu exportes INTENT_TREE_TAGS, remplace par emoji+label */}
                                 <span className="intent-tree-nodeTagEmoji">
                                     {t === "king"
                                         ? "👑"
@@ -591,13 +1057,14 @@ ${toneLine}${glowLine}  intensity="${intensity}"
       getLabel={(n) => n.name}
       getSubtitle={(n) => n.subtitle}
 
-      // new toys:
       scopeMode="${scopeMode}"
       lineageHighlight={${lineageHighlight}}
-      searchQuery={${JSON.stringify(searchQuery)}}
-      showMiniMap={${showMiniMap}}
-      enableFullscreen={${enableFullscreen}}
-      showToolbar={${showToolbar}}
+      searchable
+      getSearchText={(n) => n.name}
+
+      miniMap={${showMiniMap}}
+      fullscreenable={${enableFullscreen}}
+      toolbar={${showToolbar}}
       toolbarActions={${JSON.stringify(toolbarActions)}}
 
       layout="${layout}"
@@ -630,7 +1097,6 @@ ${toneLine}${glowLine}  intensity="${intensity}"
         dataset,
         scopeMode,
         lineageHighlight,
-        searchQuery,
         showMiniMap,
         enableFullscreen,
         showToolbar,
@@ -678,7 +1144,7 @@ ${toneLine}${glowLine}  intensity="${intensity}"
             <SelectRow label="Intent">
                 <Select
                     value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
+                    onChange={(v) => setIntent(v as Intent)}
                     options={[
                         "informed",
                         "empowered",
@@ -694,7 +1160,7 @@ ${toneLine}${glowLine}  intensity="${intensity}"
             <SelectRow label="Variant">
                 <Select
                     value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
+                    onChange={(v) => setVariant(v as Variant)}
                     options={["flat", "outlined", "elevated", "ghost"]}
                 />
             </SelectRow>
@@ -703,7 +1169,7 @@ ${toneLine}${glowLine}  intensity="${intensity}"
                 <SelectRow label="Tone">
                     <Select
                         value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
+                        onChange={(v) => setTone(v as Tone)}
                         options={[
                             "slate",
                             "gray",
@@ -746,7 +1212,7 @@ ${toneLine}${glowLine}  intensity="${intensity}"
                               : "false"
                     }
                     onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
+                        if (aestheticEnabled) return setGlow(v as Glow);
                         return setGlow(v === "true");
                     }}
                     options={[...glowOptions]}
@@ -775,21 +1241,21 @@ ${toneLine}${glowLine}  intensity="${intensity}"
                 <Select
                     value={scopeMode}
                     onChange={(v) => setScopeMode(v as ScopeMode)}
-                    options={["desc", "asc", "siblings", "full"]}
+                    options={["desc", "asc", "both", "siblings", "full"]}
                 />
                 <div className="mt-2 text-[11px] opacity-45">
-                    fratrie = <span className="font-mono">siblings</span> (B)
+                    both = ancêtres + descendants (root au centre) ✅
                 </div>
             </SelectRow>
 
-            <SelectRow label="Search">
+            <SelectRow label="Search (local booster)">
                 <TextInput
                     value={searchQuery}
                     onChange={setSearchQuery}
                     placeholder="Ex: Louis, Arya, Aegon…"
                 />
                 <div className="mt-2 text-[11px] opacity-45">
-                    Match = intent “empowered” via nodeIntent (et/ou ton moteur interne).
+                    Match = intent “empowered” via <span className="font-mono">nodeIntent</span>.
                 </div>
             </SelectRow>
 
@@ -805,21 +1271,13 @@ ${toneLine}${glowLine}  intensity="${intensity}"
 
             <SelectRow label="Mini-map / Fullscreen / Toolbar">
                 <div className="space-y-2">
+                    <CheckboxRow label="miniMap" checked={showMiniMap} onChange={setShowMiniMap} />
                     <CheckboxRow
-                        label="showMiniMap"
-                        checked={showMiniMap}
-                        onChange={setShowMiniMap}
-                    />
-                    <CheckboxRow
-                        label="enableFullscreen"
+                        label="fullscreenable"
                         checked={enableFullscreen}
                         onChange={setEnableFullscreen}
                     />
-                    <CheckboxRow
-                        label="showToolbar"
-                        checked={showToolbar}
-                        onChange={setShowToolbar}
-                    />
+                    <CheckboxRow label="toolbar" checked={showToolbar} onChange={setShowToolbar} />
                 </div>
             </SelectRow>
 
@@ -1018,6 +1476,7 @@ ${toneLine}${glowLine}  intensity="${intensity}"
                             root={root}
                             getId={(n) => n.id}
                             getChildren={(n) => n.children}
+                            {...(needsParents ? { getParents } : {})}
                             getLabel={(n) => n.name}
                             getSubtitle={(n) => n.subtitle}
                             layout={layout}
@@ -1042,14 +1501,14 @@ ${toneLine}${glowLine}  intensity="${intensity}"
                             nodeIntent={nodeIntent}
                             getNodePosition={getNodePosition}
                             renderNode={renderNode as any}
-                            // ✅ advanced props (selon ton IntentTree)
+                            // ✅ advanced props
                             scopeMode={scopeMode as any}
-                            lineageHighlight={lineageHighlight as any}
-                            getSearchText={searchQuery as any}
-                            onSearchSelect={setSearchQuery as any}
-                            miniMap={showMiniMap as any}
-                            fullscreenable={enableFullscreen as any}
-                            toolbar={showToolbar as any}
+                            lineageHighlight={lineageHighlight}
+                            searchable
+                            getSearchText={(n) => n.name}
+                            miniMap={showMiniMap}
+                            fullscreenable={enableFullscreen}
+                            toolbar={showToolbar}
                             toolbarActions={toolbarActions as any}
                         />
                     </div>

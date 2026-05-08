@@ -11,10 +11,10 @@ import React, { useMemo, useState } from "react";
 import {
     IntentPickerGlow,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
 
     // ✅ docs exports from DS
@@ -35,7 +35,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 type PreviewMode = "dark" | "light";
 type PickerMode = "toggle" | "select";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -109,11 +109,11 @@ export default function PlaygroundIntentPickerGlowClient() {
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
     // DS controls
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
 
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
 
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [dsDisabled, setDsDisabled] = useState(false);
@@ -125,7 +125,7 @@ export default function PlaygroundIntentPickerGlowClient() {
     const [valueToggle, setValueToggle] = useState<boolean>(false);
 
     // - select value (aesthetic glow)
-    const [valueSelect, setValueSelect] = useState<GlowName>("aurora");
+    const [valueSelect, setValueSelect] = useState<Glow>("aurora");
 
     const [disabled, setDisabled] = useState(false);
     const [invalid, setInvalid] = useState(false);
@@ -201,7 +201,7 @@ export default function PlaygroundIntentPickerGlowClient() {
             <SelectRow label="Intent">
                 <Select
                     value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
+                    onChange={(v) => setIntent(v as Intent)}
                     options={[
                         "informed",
                         "empowered",
@@ -217,7 +217,7 @@ export default function PlaygroundIntentPickerGlowClient() {
             <SelectRow label="Variant">
                 <Select
                     value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
+                    onChange={(v) => setVariant(v as Variant)}
                     options={["flat", "outlined", "elevated", "ghost"]}
                 />
             </SelectRow>
@@ -226,7 +226,7 @@ export default function PlaygroundIntentPickerGlowClient() {
                 <SelectRow label="Tone (DS)">
                     <Select
                         value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
+                        onChange={(v) => setTone(v as Tone)}
                         options={[
                             "slate",
                             "gray",
@@ -269,7 +269,7 @@ export default function PlaygroundIntentPickerGlowClient() {
                               : "false"
                     }
                     onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
+                        if (aestheticEnabled) return setGlow(v as Glow);
                         return setGlow(v === "true");
                     }}
                     options={[...glowOptions]}
@@ -316,7 +316,7 @@ export default function PlaygroundIntentPickerGlowClient() {
                 <SelectRow label="Value (select)">
                     <Select
                         value={valueSelect}
-                        onChange={(v) => setValueSelect(v as GlowName)}
+                        onChange={(v) => setValueSelect(v as Glow)}
                         options={["aurora", "ember", "cosmic", "mythic", "royal", "mono"]}
                     />
                 </SelectRow>
@@ -401,7 +401,7 @@ export default function PlaygroundIntentPickerGlowClient() {
         const stateInit =
             pickerMode === "toggle"
                 ? `  const [value, setValue] = React.useState<boolean>(${valueToggle});`
-                : `  const [value, setValue] = React.useState<GlowName>("${valueSelect}");`;
+                : `  const [value, setValue] = React.useState<Glow>("${valueSelect}");`;
 
         const selectUiLines =
             pickerMode === "select"
@@ -409,7 +409,7 @@ export default function PlaygroundIntentPickerGlowClient() {
                 : "";
 
         return `import * as React from "react";
-import { IntentPickerGlow, type GlowName } from "intent-design-system";
+import { IntentPickerGlow, type Glow } from "intent-design-system";
 
 export function Example() {
 ${stateInit}
@@ -478,7 +478,7 @@ ${leadingLine}${trailingLine}${pickerModeLine}${selectUiLines}${hintLine}      v
                         value={liveValue as any}
                         onChange={(next: any) => {
                             if (pickerMode === "toggle") setValueToggle(Boolean(next));
-                            else setValueSelect(next as GlowName);
+                            else setValueSelect(next as Glow);
                         }}
                         disabled={disabled}
                         invalid={invalid}

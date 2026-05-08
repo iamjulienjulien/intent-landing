@@ -11,10 +11,10 @@ import {
     IntentControlSelect,
     IntentControlField,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
 } from "intent-design-system";
 
@@ -58,7 +58,7 @@ type ComponentLink = {
     badge?: string;
 };
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -286,10 +286,10 @@ type PresetKey = "default" | "glow" | "toned" | "warning-demo";
 const PRESETS: Record<
     PresetKey,
     {
-        intent: IntentName;
-        variant: VariantName;
-        tone?: ToneName;
-        glow?: boolean | GlowName;
+        intent: Intent;
+        variant: Variant;
+        tone?: Tone;
+        glow?: boolean | Glow;
         intensity: Intensity;
         disabled: boolean;
     }
@@ -328,10 +328,10 @@ const PRESETS: Record<
 };
 
 export default function PlaygroundClient({ copy }: { copy: PlaygroundCopy }) {
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [disabled, setDisabled] = useState(false);
 
@@ -551,7 +551,7 @@ export default function PlaygroundClient({ copy }: { copy: PlaygroundCopy }) {
                             tone="neutral"
                             fullWidth
                             value={intent}
-                            onValueChange={(v) => setIntent(v as IntentName)}
+                            onValueChange={(v) => setIntent(v as Intent)}
                             options={[
                                 { value: "informed", label: "informed" },
                                 { value: "empowered", label: "empowered" },
@@ -576,7 +576,7 @@ export default function PlaygroundClient({ copy }: { copy: PlaygroundCopy }) {
                             tone="neutral"
                             fullWidth
                             value={variant}
-                            onValueChange={(v) => setVariant(v as VariantName)}
+                            onValueChange={(v) => setVariant(v as Variant)}
                             options={[
                                 { value: "flat", label: "flat" },
                                 { value: "outlined", label: "outlined" },
@@ -600,7 +600,7 @@ export default function PlaygroundClient({ copy }: { copy: PlaygroundCopy }) {
                                 tone="neutral"
                                 fullWidth
                                 value={tone}
-                                onValueChange={(v) => setTone(v as ToneName)}
+                                onValueChange={(v) => setTone(v as Tone)}
                                 options={[
                                     "slate",
                                     "gray",
@@ -653,7 +653,7 @@ export default function PlaygroundClient({ copy }: { copy: PlaygroundCopy }) {
                                       : "false"
                             }
                             onValueChange={(v) => {
-                                if (aestheticEnabled) return setGlow(v as GlowName);
+                                if (aestheticEnabled) return setGlow(v as Glow);
                                 return setGlow(v === "true");
                             }}
                             options={[...glowOptions].map((g) => ({ value: g, label: g }))}

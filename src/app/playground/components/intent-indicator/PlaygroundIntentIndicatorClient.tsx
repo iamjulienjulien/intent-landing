@@ -10,11 +10,12 @@ import React, { useMemo, useState } from "react";
 import {
     IntentIndicator,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
+    type ToneStep,
 
     // ✅ docs exports from DS
     IntentIndicatorIdentity,
@@ -34,14 +35,19 @@ function cn(...classes: Array<string | false | null | undefined>) {
 type IndicatorSize = "xs" | "sm" | "md" | "lg";
 type PreviewMode = "dark" | "light";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
         glow === "cosmic" ||
         glow === "mythic" ||
         glow === "royal" ||
-        glow === "mono"
+        glow === "mono" ||
+        glow === "boreal" ||
+        glow === "solstice" ||
+        glow === "nebula" ||
+        glow === "verdant" ||
+        glow === "nocturne"
     );
 }
 
@@ -107,12 +113,12 @@ export default function PlaygroundIntentIndicatorClient() {
     // ✅ NEW: preview mode (drives shell tile bg + mode passed to the component)
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
 
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
-
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
+    const [toneStep, setToneStep] = useState<ToneStep>(500);
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [disabled, setDisabled] = useState(false);
 
@@ -148,14 +154,27 @@ export default function PlaygroundIntentIndicatorClient() {
                   ? true
                   : undefined,
             intensity,
+            toneStep,
             disabled,
         } as const;
-    }, [intent, variant, toneEnabled, tone, aestheticEnabled, glow, intensity, disabled]);
+    }, [intent, variant, toneEnabled, tone, aestheticEnabled, glow, intensity, toneStep, disabled]);
 
     const resolvedWithWarnings = useMemo(() => resolveIntentWithWarnings(dsInput), [dsInput]);
 
     const glowOptions = aestheticEnabled
-        ? (["aurora", "ember", "cosmic", "mythic", "royal", "mono"] as const)
+        ? ([
+              "aurora",
+              "ember",
+              "cosmic",
+              "mythic",
+              "royal",
+              "mono",
+              "boreal",
+              "solstice",
+              "nebula",
+              "verdant",
+              "nocturne",
+          ] as const)
         : (["false", "true"] as const);
 
     /* ============================================================================
@@ -175,7 +194,7 @@ export default function PlaygroundIntentIndicatorClient() {
             <SelectRow label="Intent">
                 <Select
                     value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
+                    onChange={(v) => setIntent(v as Intent)}
                     options={[
                         "informed",
                         "empowered",
@@ -191,7 +210,7 @@ export default function PlaygroundIntentIndicatorClient() {
             <SelectRow label="Variant">
                 <Select
                     value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
+                    onChange={(v) => setVariant(v as Variant)}
                     options={["flat", "outlined", "elevated", "ghost"]}
                 />
             </SelectRow>
@@ -200,7 +219,7 @@ export default function PlaygroundIntentIndicatorClient() {
                 <SelectRow label="Tone">
                     <Select
                         value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
+                        onChange={(v) => setTone(v as Tone)}
                         options={[
                             "slate",
                             "gray",
@@ -247,7 +266,7 @@ export default function PlaygroundIntentIndicatorClient() {
                               : "false"
                     }
                     onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
+                        if (aestheticEnabled) return setGlow(v as Glow);
                         return setGlow(v === "true");
                     }}
                     options={[...glowOptions]}
@@ -271,6 +290,30 @@ export default function PlaygroundIntentIndicatorClient() {
                     onChange={(v) => setIntensity(v as Intensity)}
                     options={["soft", "medium", "strong"]}
                 />
+            </SelectRow>
+
+            <SelectRow label="ToneStep">
+                <Select
+                    value={String(toneStep)}
+                    onChange={(v) => setToneStep(Number(v) as ToneStep)}
+                    options={[
+                        "50",
+                        "100",
+                        "200",
+                        "300",
+                        "400",
+                        "500",
+                        "600",
+                        "700",
+                        "800",
+                        "900",
+                        "950",
+                    ]}
+                />
+                <div className="text-[11px] opacity-40">
+                    Éclaircit/assombrit via step Tailwind. Référence canonique:{" "}
+                    <span className="font-mono">500</span>.
+                </div>
             </SelectRow>
 
             <SelectRow label="State">
@@ -341,6 +384,8 @@ export default function PlaygroundIntentIndicatorClient() {
 
         const roleLine = roleValue ? `      role="${roleValue}"\n` : "";
 
+        const toneStepLine = `      toneStep={${toneStep}}\n`;
+
         const leftIconLine = leftIcon ? `      leftIcon={<span aria-hidden>●</span>}\n` : "";
         const rightIconLine = rightIcon ? `      rightIcon={<span aria-hidden>↗</span>}\n` : "";
 
@@ -354,7 +399,7 @@ export function Example() {
       intent="${intent}"
       variant="${variant}"
 ${toneLine}${glowLine}      intensity="${intensity}"
-      disabled={${disabled}}
+${toneStepLine}      disabled={${disabled}}
       size="${size}"
       fullWidth={${fullWidth}}
       dot={${dot}}
@@ -370,6 +415,7 @@ ${roleLine}${leftIconLine}${rightIconLine}    >
         tone,
         glow,
         intensity,
+        toneStep,
         disabled,
         size,
         fullWidth,

@@ -10,20 +10,22 @@ import React, { useMemo, useState } from "react";
 import {
     IntentControlButton,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
+    type ToneStep,
 
     // ✅ docs exports from DS
     IntentControlButtonIdentity,
     IntentControlButtonPropsTable,
     IntentPickerTone,
-    IntentPickerGlow,
+    // IntentPickerGlow,
 } from "intent-design-system";
 
 import { PlaygroundComponentShell } from "../_components/PlaygroundComponentShell";
+import PlaygroundComponentDesignControls from "../_components/PlaygroundComponentDesignControls";
 
 /* ============================================================================
    🧰 HELPERS
@@ -36,7 +38,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl";
 type PreviewMode = "dark" | "light";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -109,13 +111,14 @@ export default function PlaygroundIntentControlButtonClient() {
     // ✅ preview mode (controls single preview tile background + mode passed to component)
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
 
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
 
     const [intensity, setIntensity] = useState<Intensity>("medium");
+    const [toneStep, setToneStep] = useState<ToneStep>(500);
     const [disabled, setDisabled] = useState(false);
 
     const [size, setSize] = useState<ButtonSize>("md");
@@ -150,155 +153,12 @@ export default function PlaygroundIntentControlButtonClient() {
                   ? true
                   : undefined,
             intensity,
+            toneStep,
             disabled,
         } as const;
-    }, [intent, variant, toneEnabled, tone, aestheticEnabled, glow, intensity, disabled]);
+    }, [intent, variant, toneEnabled, tone, aestheticEnabled, glow, intensity, toneStep, disabled]);
 
     const resolvedWithWarnings = useMemo(() => resolveIntentWithWarnings(dsInput), [dsInput]);
-
-    const glowOptions = aestheticEnabled
-        ? (["aurora", "ember", "cosmic", "mythic", "royal", "mono"] as const)
-        : (["false", "true"] as const);
-
-    /* ============================================================================
-       🧩 Controls split (DS vs Playground)
-    ============================================================================ */
-
-    const controlsDs = (
-        <>
-            <SelectRow label="mode">
-                <Select
-                    value={previewMode}
-                    onChange={(v) => setPreviewMode(v as PreviewMode)}
-                    options={["dark", "light"]}
-                />
-            </SelectRow>
-
-            <SelectRow label="Intent">
-                <Select
-                    value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
-                    options={[
-                        "informed",
-                        "empowered",
-                        "warned",
-                        "threatened",
-                        "themed",
-                        "toned",
-                        "glowed",
-                    ]}
-                />
-            </SelectRow>
-
-            <SelectRow label="Variant">
-                <Select
-                    value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
-                    options={["flat", "outlined", "elevated", "ghost"]}
-                />
-            </SelectRow>
-
-            {toneEnabled ? (
-                <IntentPickerTone
-                    value={tone}
-                    onChange={(v) => setTone(v as ToneName)}
-                    intent="toned"
-                    variant="flat"
-                    tone="neutral"
-                    size="xs"
-                />
-            ) : null}
-
-            {/* {toneEnabled ? (
-                <SelectRow label="Tone">
-                    <Select
-                        value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
-                        options={[
-                            "slate",
-                            "gray",
-                            "zinc",
-                            "neutral",
-                            "stone",
-                            "red",
-                            "orange",
-                            "amber",
-                            "yellow",
-                            "lime",
-                            "green",
-                            "emerald",
-                            "teal",
-                            "cyan",
-                            "sky",
-                            "blue",
-                            "indigo",
-                            "violet",
-                            "purple",
-                            "fuchsia",
-                            "pink",
-                            "rose",
-                            "theme",
-                            "black",
-                        ]}
-                    />
-                </SelectRow>
-            ) : null} */}
-
-            <IntentPickerGlow
-                value={
-                    aestheticEnabled
-                        ? typeof glow === "string"
-                            ? glow
-                            : "aurora"
-                        : glow === true
-                          ? true
-                          : false
-                }
-                onChange={(v) => {
-                    if (aestheticEnabled) return setGlow(v as GlowName);
-                    return setGlow(v === true);
-                }}
-                pickerMode={aestheticEnabled ? "select" : "toggle"}
-                intent="toned"
-                variant="flat"
-                tone="neutral"
-                size="xs"
-            />
-
-            {/* <SelectRow label="Glow">
-                <Select
-                    value={
-                        aestheticEnabled
-                            ? typeof glow === "string"
-                                ? glow
-                                : "aurora"
-                            : glow === true
-                              ? "true"
-                              : "false"
-                    }
-                    onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
-                        return setGlow(v === "true");
-                    }}
-                    options={[...glowOptions]}
-                />
-            </SelectRow> */}
-
-            <SelectRow label="Intensity">
-                <Select
-                    value={intensity}
-                    onChange={(v) => setIntensity(v as Intensity)}
-                    options={["soft", "medium", "strong"]}
-                />
-            </SelectRow>
-
-            <SelectRow label="State">
-                <div className="space-y-2">
-                    <CheckboxRow label="disabled" checked={disabled} onChange={setDisabled} />
-                </div>
-            </SelectRow>
-        </>
-    );
 
     const controlsLocal = (
         <>
@@ -404,10 +264,29 @@ ${onClickLine}    >
             identity={IntentControlButtonIdentity}
             propsTable={IntentControlButtonPropsTable}
             locale="fr"
-            dsControls={controlsDs}
+            dsControls={
+                <PlaygroundComponentDesignControls
+                    previewMode={previewMode}
+                    intent={intent}
+                    variant={variant}
+                    tone={tone}
+                    glow={glow}
+                    intensity={intensity}
+                    toneStep={toneStep}
+                    disabled={disabled}
+                    onPreviewModeChange={setPreviewMode}
+                    onIntentChange={setIntent}
+                    onVariantChange={setVariant}
+                    onToneChange={setTone}
+                    onGlowChange={setGlow}
+                    onIntensityChange={setIntensity}
+                    onToneStepChange={setToneStep}
+                    onDisabledChange={setDisabled}
+                />
+            }
             extraControls={controlsLocal}
             warnings={resolvedWithWarnings.warnings}
-            resolvedJson={resolvedWithWarnings}
+            // resolvedJson={resolvedWithWarnings}
             previewMode={previewMode}
             codeString={codeString}
             renderPreview={(mode) => (

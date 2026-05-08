@@ -5,6 +5,7 @@
 // - Uses PlaygroundComponentShell to test IntentControlSelect
 // - Uses DS exports: Identity + PropsTable
 // - Split controls: DS vs Playground
+// - Covers portal / multiple / searchable / groups / custom option renderer
 // - Has Code drawer (copy/paste snippet)
 
 import React, { useMemo, useState } from "react";
@@ -12,13 +13,15 @@ import React, { useMemo, useState } from "react";
 import {
     IntentControlSelect,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
+    type IntentControlSelectValue,
+    type IntentControlSelectOption,
 
-    // ✅ docs exports from DS
+    // docs exports
     IntentControlSelectIdentity,
     IntentControlSelectPropsTable,
 } from "intent-design-system";
@@ -36,7 +39,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 type SelectSize = "xs" | "sm" | "md" | "lg" | "xl";
 type PreviewMode = "dark" | "light";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -45,6 +48,10 @@ function isAestheticGlow(glow: GlowName): boolean {
         glow === "royal" ||
         glow === "mono"
     );
+}
+
+function esc(str: string) {
+    return str.replace(/"/g, '\\"');
 }
 
 function SelectRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -101,43 +108,118 @@ function CheckboxRow({
     );
 }
 
+function TextInput({
+    value,
+    onChange,
+    placeholder,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+}) {
+    return (
+        <input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={cn(
+                "w-full rounded-xl bg-black/25 ring-1 ring-white/10",
+                "px-3 py-2 text-sm opacity-85",
+                "focus:outline-none focus:ring-2 focus:ring-white/15"
+            )}
+        />
+    );
+}
+
+function formatValue(value: IntentControlSelectValue) {
+    if (Array.isArray(value)) return `[${value.join(", ")}]`;
+    return value ?? "null";
+}
+
 /* ============================================================================
    ✅ MAIN
 ============================================================================ */
 
-type DemoOption = { value: string; label: string; disabled?: boolean };
-
-const DEMO_OPTIONS: DemoOption[] = [
-    { value: "loire", label: "Loire" },
-    { value: "mayenne", label: "Mayenne" },
-    { value: "maine", label: "Maine" },
-    { value: "authion", label: "Authion" },
-    { value: "layon", label: "Layon", disabled: true },
+const DEMO_OPTIONS_BASE: Array<IntentControlSelectOption> = [
+    {
+        value: "loire",
+        label: "Loire",
+        emoji: "🌊",
+        description: "Le grand fil bleu ligérien",
+        group: "Fleuves",
+    },
+    {
+        value: "mayenne",
+        label: "Mayenne",
+        emoji: "🛶",
+        description: "Calme et verte",
+        group: "Rivières",
+    },
+    {
+        value: "maine",
+        label: "Maine",
+        emoji: "🌉",
+        description: "Courte mais angevine",
+        group: "Rivières",
+    },
+    {
+        value: "authion",
+        label: "Authion",
+        emoji: "🌾",
+        description: "Entre levées et plaines",
+        group: "Affluents",
+    },
+    {
+        value: "layon",
+        label: "Layon",
+        emoji: "🍇",
+        description: "Le pays des coteaux",
+        group: "Affluents",
+        disabled: true,
+    },
+    {
+        value: "èvre",
+        label: "Èvre",
+        emoji: "🌿",
+        description: "Une rivière discrète",
+        group: "Affluents",
+    },
 ];
 
 export default function PlaygroundIntentControlSelectClient() {
-    // ✅ preview mode (controls single preview tile background + mode passed to component)
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
     // DS props
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
-
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
-
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [disabled, setDisabled] = useState(false);
 
-    // Local props (select)
+    // Local props
     const [size, setSize] = useState<SelectSize>("md");
     const [fullWidth, setFullWidth] = useState(true);
+    const [insideField, setInsideField] = useState(false);
+    const [invalid, setInvalid] = useState(false);
+    const [readOnly, setReadOnly] = useState(false);
 
     const [placeholder, setPlaceholder] = useState("Choisir une rivière…");
-    const [value, setValue] = useState<string | null>(null);
+    const [searchPlaceholder, setSearchPlaceholder] = useState("Rechercher…");
 
+    const [multiple, setMultiple] = useState(false);
+    const [portal, setPortal] = useState(false);
+    const [searchable, setSearchable] = useState(false);
     const [clearable, setClearable] = useState(true);
+    const [closeOnSelect, setCloseOnSelect] = useState(true);
+    const [align, setAlign] = useState<"start" | "end">("start");
+
     const [withDisabledOption, setWithDisabledOption] = useState(true);
+    const [withGroups, setWithGroups] = useState(true);
+    const [customRenderOption, setCustomRenderOption] = useState(false);
+
+    const [singleValue, setSingleValue] = useState<string | null>(null);
+    const [multiValue, setMultiValue] = useState<string[]>(["loire", "maine"]);
 
     const toneEnabled = intent === "toned";
     const aestheticEnabled = intent === "glowed";
@@ -149,11 +231,41 @@ export default function PlaygroundIntentControlSelectClient() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [aestheticEnabled]);
 
+    React.useEffect(() => {
+        if (multiple) {
+            if (singleValue) {
+                setMultiValue((prev) =>
+                    prev.includes(singleValue) ? prev : [singleValue, ...prev]
+                );
+            }
+        } else {
+            setSingleValue(multiValue[0] ?? null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [multiple]);
+
     const options = useMemo(() => {
-        return withDisabledOption
-            ? DEMO_OPTIONS
-            : DEMO_OPTIONS.map((o) => ({ ...o, disabled: false }));
-    }, [withDisabledOption]);
+        return DEMO_OPTIONS_BASE.map((opt) => ({
+            ...opt,
+            disabled: withDisabledOption ? opt.disabled : false,
+            group: withGroups ? opt.group : null,
+        }));
+    }, [withDisabledOption, withGroups]);
+
+    const currentValue = useMemo<IntentControlSelectValue>(() => {
+        return multiple ? multiValue : singleValue;
+    }, [multiple, multiValue, singleValue]);
+
+    const setCurrentValue = React.useCallback(
+        (next: IntentControlSelectValue) => {
+            if (multiple) {
+                setMultiValue(Array.isArray(next) ? next : []);
+            } else {
+                setSingleValue(Array.isArray(next) ? (next[0] ?? null) : next);
+            }
+        },
+        [multiple]
+    );
 
     const dsInput = useMemo(() => {
         return {
@@ -178,8 +290,35 @@ export default function PlaygroundIntentControlSelectClient() {
         ? (["aurora", "ember", "cosmic", "mythic", "royal", "mono"] as const)
         : (["false", "true"] as const);
 
+    const groupBy = useMemo(() => {
+        if (!withGroups) return undefined;
+        return (opt: IntentControlSelectOption) => opt.group ?? null;
+    }, [withGroups]);
+
+    const renderOption = useMemo(() => {
+        if (!customRenderOption) return undefined;
+
+        return (opt: IntentControlSelectOption, state: any) => (
+            <div className="flex items-center justify-between gap-3 w-full min-w-0">
+                <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">
+                        {opt.emoji ? <span className="mr-2">{opt.emoji}</span> : null}
+                        {opt.label}
+                    </div>
+                    {opt.description ? (
+                        <div className="truncate text-[11px] opacity-60">{opt.description}</div>
+                    ) : null}
+                </div>
+
+                <div className="shrink-0 text-[11px] opacity-70">
+                    {state.selected ? "selected" : state.highlighted ? "hover" : ""}
+                </div>
+            </div>
+        );
+    }, [customRenderOption]);
+
     /* ============================================================================
-       🧩 Controls split (DS vs Playground)
+       Controls split
     ============================================================================ */
 
     const controlsDs = (
@@ -195,7 +334,7 @@ export default function PlaygroundIntentControlSelectClient() {
             <SelectRow label="Intent">
                 <Select
                     value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
+                    onChange={(v) => setIntent(v as Intent)}
                     options={[
                         "informed",
                         "empowered",
@@ -211,7 +350,7 @@ export default function PlaygroundIntentControlSelectClient() {
             <SelectRow label="Variant">
                 <Select
                     value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
+                    onChange={(v) => setVariant(v as Variant)}
                     options={["flat", "outlined", "elevated", "ghost"]}
                 />
             </SelectRow>
@@ -220,7 +359,7 @@ export default function PlaygroundIntentControlSelectClient() {
                 <SelectRow label="Tone">
                     <Select
                         value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
+                        onChange={(v) => setTone(v as Tone)}
                         options={[
                             "slate",
                             "gray",
@@ -263,8 +402,11 @@ export default function PlaygroundIntentControlSelectClient() {
                               : "false"
                     }
                     onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
-                        return setGlow(v === "true");
+                        if (aestheticEnabled) {
+                            setGlow(v as Glow);
+                            return;
+                        }
+                        setGlow(v === "true");
                     }}
                     options={[...glowOptions]}
                 />
@@ -281,6 +423,8 @@ export default function PlaygroundIntentControlSelectClient() {
             <SelectRow label="State">
                 <div className="space-y-2">
                     <CheckboxRow label="disabled" checked={disabled} onChange={setDisabled} />
+                    <CheckboxRow label="invalid" checked={invalid} onChange={setInvalid} />
+                    <CheckboxRow label="readOnly" checked={readOnly} onChange={setReadOnly} />
                 </div>
             </SelectRow>
         </>
@@ -299,7 +443,34 @@ export default function PlaygroundIntentControlSelectClient() {
             <SelectRow label="Layout">
                 <div className="space-y-2">
                     <CheckboxRow label="fullWidth" checked={fullWidth} onChange={setFullWidth} />
+                    <CheckboxRow
+                        label="insideField (naked)"
+                        checked={insideField}
+                        onChange={setInsideField}
+                    />
                 </div>
+            </SelectRow>
+
+            <SelectRow label="Behavior">
+                <div className="space-y-2">
+                    <CheckboxRow label="multiple" checked={multiple} onChange={setMultiple} />
+                    <CheckboxRow label="portal" checked={portal} onChange={setPortal} />
+                    <CheckboxRow label="searchable" checked={searchable} onChange={setSearchable} />
+                    <CheckboxRow label="clearable" checked={clearable} onChange={setClearable} />
+                    <CheckboxRow
+                        label="closeOnSelect"
+                        checked={closeOnSelect}
+                        onChange={setCloseOnSelect}
+                    />
+                </div>
+            </SelectRow>
+
+            <SelectRow label="Align">
+                <Select
+                    value={align}
+                    onChange={(v) => setAlign(v as "start" | "end")}
+                    options={["start", "end"]}
+                />
             </SelectRow>
 
             <SelectRow label="Data">
@@ -309,78 +480,131 @@ export default function PlaygroundIntentControlSelectClient() {
                         checked={withDisabledOption}
                         onChange={setWithDisabledOption}
                     />
-                </div>
-                <div className="mt-2 text-[11px] opacity-40">
-                    Ajoute une option disabled (ex: Layon) pour tester l’état.
-                </div>
-            </SelectRow>
-
-            <SelectRow label="Value">
-                <Select
-                    value={value ?? ""}
-                    onChange={(v) => setValue(v ? v : null)}
-                    options={["", ...options.map((o) => o.value)]}
-                />
-                <div className="mt-2 text-[11px] opacity-40">
-                    Ce select “Value” sert juste à changer rapidement la valeur depuis le
-                    playground.
+                    <CheckboxRow
+                        label="with groups"
+                        checked={withGroups}
+                        onChange={setWithGroups}
+                    />
+                    <CheckboxRow
+                        label="custom renderOption"
+                        checked={customRenderOption}
+                        onChange={setCustomRenderOption}
+                    />
                 </div>
             </SelectRow>
 
             <SelectRow label="Placeholder">
-                <input
-                    value={placeholder}
-                    onChange={(e) => setPlaceholder(e.target.value)}
-                    className={cn(
-                        "w-full rounded-xl bg-black/25 ring-1 ring-white/10",
-                        "px-3 py-2 text-sm opacity-85",
-                        "focus:outline-none focus:ring-2 focus:ring-white/15"
-                    )}
-                />
+                <TextInput value={placeholder} onChange={setPlaceholder} />
             </SelectRow>
 
-            <SelectRow label="Behavior">
-                <div className="space-y-2">
-                    <CheckboxRow label="clearable" checked={clearable} onChange={setClearable} />
-                </div>
+            {searchable ? (
+                <SelectRow label="Search placeholder">
+                    <TextInput value={searchPlaceholder} onChange={setSearchPlaceholder} />
+                </SelectRow>
+            ) : null}
+
+            <SelectRow label="Value">
+                {multiple ? (
+                    <div className="space-y-2">
+                        {options.map((opt) => (
+                            <CheckboxRow
+                                key={opt.value}
+                                label={String(opt.value)}
+                                checked={multiValue.includes(String(opt.value))}
+                                onChange={(checked) => {
+                                    setMultiValue((prev) => {
+                                        const next = new Set(prev);
+                                        if (checked) next.add(String(opt.value));
+                                        else next.delete(String(opt.value));
+                                        return Array.from(next);
+                                    });
+                                }}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        <Select
+                            value={singleValue ?? ""}
+                            onChange={(v) => setSingleValue(v ? v : null)}
+                            options={["", ...options.map((o) => String(o.value))]}
+                        />
+                        <div className="mt-2 text-[11px] opacity-40">
+                            Ce select modifie la valeur depuis le playground.
+                        </div>
+                    </>
+                )}
             </SelectRow>
 
             <div className="text-[11px] opacity-55">
-                Astuce: teste le clavier (↑ ↓ Enter Escape) et le focus pour valider
-                combobox/listbox.
+                Astuce: teste le clavier (↑ ↓ Enter Escape), la recherche, le portal dans une zone
+                contrainte, et le mode multiple pour valider les tags.
             </div>
         </>
     );
 
     /* ============================================================================
-       🧾 Code drawer string
+       Code drawer string
     ============================================================================ */
 
     const codeString = useMemo(() => {
-        const toneLine = intent === "toned" ? `    tone="${tone}"\n` : "";
+        const toneLine = intent === "toned" ? `      tone="${tone}"\n` : "";
 
         const glowLine =
             intent === "glowed"
-                ? `    glow="${typeof glow === "string" ? glow : "aurora"}"\n`
+                ? `      glow="${typeof glow === "string" ? glow : "aurora"}"\n`
                 : glow === true
-                  ? `    glow\n`
+                  ? `      glow\n`
                   : "";
 
-        const valueLine = value ? `      value="${value}"\n` : `      value={null}\n`;
+        const optionsString = withGroups
+            ? `const options = [
+  { value: "loire", label: "Loire", emoji: "🌊", description: "Le grand fil bleu ligérien", group: "Fleuves" },
+  { value: "mayenne", label: "Mayenne", emoji: "🛶", description: "Calme et verte", group: "Rivières" },
+  { value: "maine", label: "Maine", emoji: "🌉", description: "Courte mais angevine", group: "Rivières" },
+  { value: "authion", label: "Authion", emoji: "🌾", description: "Entre levées et plaines", group: "Affluents" },
+  { value: "layon", label: "Layon", emoji: "🍇", description: "Le pays des coteaux", group: "Affluents", disabled: true },
+];`
+            : `const options = [
+  { value: "loire", label: "Loire", emoji: "🌊", description: "Le grand fil bleu ligérien" },
+  { value: "mayenne", label: "Mayenne", emoji: "🛶", description: "Calme et verte" },
+  { value: "maine", label: "Maine", emoji: "🌉", description: "Courte mais angevine" },
+  { value: "authion", label: "Authion", emoji: "🌾", description: "Entre levées et plaines" },
+  { value: "layon", label: "Layon", emoji: "🍇", description: "Le pays des coteaux", disabled: true },
+];`;
+
+        const valueStateLine = multiple
+            ? `  const [value, setValue] = React.useState<string[]>(${JSON.stringify(multiValue)});`
+            : `  const [value, setValue] = React.useState<string | null>(${singleValue ? `"${singleValue}"` : "null"});`;
+
+        const multipleLine = multiple ? `      multiple\n` : "";
+        const portalLine = portal ? `      portal\n` : "";
+        const searchableLine = searchable
+            ? `      searchable\n      searchPlaceholder="${esc(searchPlaceholder)}"\n`
+            : "";
+        const clearableLine = clearable ? `      clearable\n` : "";
+        const groupByLine = withGroups ? `      groupBy={(opt) => opt.group}\n` : "";
+        const renderOptionLine = customRenderOption
+            ? `      renderOption={(opt, state) => (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, width: "100%" }}>
+          <div>
+            <div>{opt.emoji ? \`\${opt.emoji} \` : ""}{opt.label}</div>
+            {opt.description ? <div style={{ fontSize: 12, opacity: 0.6 }}>{opt.description}</div> : null}
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.7 }}>
+            {state.selected ? "selected" : state.highlighted ? "hover" : ""}
+          </div>
+        </div>
+      )}\n`
+            : "";
 
         return `import * as React from "react";
 import { IntentControlSelect } from "intent-design-system";
 
-const options = [
-  { value: "loire", label: "Loire" },
-  { value: "mayenne", label: "Mayenne" },
-  { value: "maine", label: "Maine" },
-  { value: "authion", label: "Authion" },
-  { value: "layon", label: "Layon", disabled: true },
-];
+${optionsString}
 
 export function Example() {
-  const [value, setValue] = React.useState<string | null>(${value ? `"${value}"` : "null"});
+${valueStateLine}
 
   return (
     <IntentControlSelect
@@ -389,11 +613,16 @@ export function Example() {
       variant="${variant}"
 ${toneLine}${glowLine}      intensity="${intensity}"
       disabled={${disabled}}
+      invalid={${invalid}}
+      readOnly={${readOnly}}
       size="${size}"
       fullWidth={${fullWidth}}
-      placeholder="${placeholder.replaceAll('"', '\\"')}"
-      clearable={${clearable}}
-${valueLine}      onValueChange={setValue}
+      insideField={${insideField}}
+      placeholder="${esc(placeholder)}"
+      align="${align}"
+      closeOnSelect={${closeOnSelect}}
+${multipleLine}${portalLine}${searchableLine}${clearableLine}${groupByLine}${renderOptionLine}      value={value}
+      onValueChange={setValue}
       options={options}
     />
   );
@@ -406,15 +635,27 @@ ${valueLine}      onValueChange={setValue}
         glow,
         intensity,
         disabled,
+        invalid,
+        readOnly,
         size,
         fullWidth,
+        insideField,
         placeholder,
+        align,
+        closeOnSelect,
+        multiple,
+        multiValue,
+        singleValue,
+        portal,
+        searchable,
+        searchPlaceholder,
         clearable,
-        value,
+        withGroups,
+        customRenderOption,
     ]);
 
     /* ============================================================================
-       ✅ Render
+       Render
     ============================================================================ */
 
     return (
@@ -430,19 +671,32 @@ ${valueLine}      onValueChange={setValue}
             codeString={codeString}
             renderPreview={(mode) => (
                 <div className="w-full min-w-0">
-                    <div className={cn("w-full min-w-0", fullWidth ? "" : "flex items-start")}>
-                        <IntentControlSelect
-                            {...dsInput}
-                            mode={mode}
-                            size={size}
-                            fullWidth={fullWidth}
-                            disabled={disabled}
-                            placeholder={placeholder}
-                            clearable={clearable}
-                            value={value}
-                            onValueChange={setValue}
-                            options={options}
-                        />
+                    <div className="rounded-2xl ring-1 ring-white/10 bg-black/10 p-4 overflow-visible">
+                        <div className={cn("w-full min-w-0", fullWidth ? "" : "flex items-start")}>
+                            <IntentControlSelect
+                                {...dsInput}
+                                mode={mode}
+                                size={size}
+                                fullWidth={fullWidth}
+                                disabled={disabled}
+                                invalid={invalid}
+                                readOnly={readOnly}
+                                insideField={insideField}
+                                placeholder={placeholder}
+                                searchPlaceholder={searchPlaceholder}
+                                clearable={clearable}
+                                closeOnSelect={closeOnSelect}
+                                align={align}
+                                portal={portal}
+                                multiple={multiple}
+                                searchable={searchable}
+                                value={currentValue}
+                                onValueChange={setCurrentValue}
+                                options={options}
+                                groupBy={groupBy}
+                                renderOption={renderOption}
+                            />
+                        </div>
                     </div>
 
                     <div className="mt-3 text-xs opacity-70">
@@ -450,12 +704,15 @@ ${valueLine}      onValueChange={setValue}
                         <span className="font-mono"> {variant}</span>, intent=
                         <span className="font-mono"> {intent}</span>, size=
                         <span className="font-mono"> {size}</span>, value=
-                        <span className="font-mono"> {value ?? "null"}</span>
+                        <span className="font-mono"> {formatValue(currentValue)}</span>
                     </div>
 
                     <div className="mt-2 text-[11px] opacity-55">
-                        Astuce: <span className="font-mono">clearable=true</span> permet de revenir
-                        à <span className="font-mono">null</span>.
+                        multiple=<span className="font-mono"> {String(multiple)}</span> ·
+                        searchable=<span className="font-mono"> {String(searchable)}</span> ·
+                        portal=<span className="font-mono"> {String(portal)}</span> · groups=
+                        <span className="font-mono"> {String(withGroups)}</span> · customRender=
+                        <span className="font-mono"> {String(customRenderOption)}</span>
                     </div>
                 </div>
             )}

@@ -10,10 +10,10 @@ import React, { useMemo, useState } from "react";
 import {
     IntentTable,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
 
     // ✅ docs exports from DS
@@ -33,7 +33,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 type PreviewMode = "dark" | "light";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -674,11 +674,11 @@ const MOCK_ROWS: HouseRow[] = [
 export default function PlaygroundIntentTableClient() {
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
 
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
 
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [disabled, setDisabled] = useState(false);
@@ -880,21 +880,21 @@ export default function PlaygroundIntentTableClient() {
         return (row: HouseRow) => {
             // Active / Rising = "power" vibe
             if (row.status === "active")
-                return { intent: "empowered", variant: "ghost" as VariantName };
+                return { intent: "empowered", variant: "ghost" as Variant };
 
             if (row.status === "rising")
-                return { intent: "themed", variant: "ghost" as VariantName };
+                return { intent: "themed", variant: "ghost" as Variant };
 
             // Declining = warning (fragile / tension)
             if (row.status === "declining")
-                return { intent: "warned", variant: "ghost" as VariantName };
+                return { intent: "warned", variant: "ghost" as Variant };
 
             // Defeated / Extinct = danger / failure / ruin
             if (row.status === "defeated" || row.status === "extinct")
-                return { intent: "threatened", variant: "ghost" as VariantName };
+                return { intent: "threatened", variant: "ghost" as Variant };
 
             // Unknown = neutral, let the table stay calm
-            return { intent: "informed", variant: "ghost" as VariantName };
+            return { intent: "informed", variant: "ghost" as Variant };
         };
     }, [rowIntentEnabled]);
 
@@ -915,7 +915,7 @@ export default function PlaygroundIntentTableClient() {
             <SelectRow label="Intent">
                 <Select
                     value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
+                    onChange={(v) => setIntent(v as Intent)}
                     options={[
                         "informed",
                         "empowered",
@@ -931,7 +931,7 @@ export default function PlaygroundIntentTableClient() {
             <SelectRow label="Variant">
                 <Select
                     value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
+                    onChange={(v) => setVariant(v as Variant)}
                     options={["flat", "outlined", "elevated", "ghost"]}
                 />
             </SelectRow>
@@ -940,7 +940,7 @@ export default function PlaygroundIntentTableClient() {
                 <SelectRow label="Tone">
                     <Select
                         value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
+                        onChange={(v) => setTone(v as Tone)}
                         options={[
                             "slate",
                             "gray",
@@ -983,7 +983,7 @@ export default function PlaygroundIntentTableClient() {
                               : "false"
                     }
                     onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
+                        if (aestheticEnabled) return setGlow(v as Glow);
                         return setGlow(v === "true");
                     }}
                     options={[...glowOptions]}

@@ -13,10 +13,10 @@ import {
     IntentControlInput,
     IntentControlField,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
 
     // ✅ docs exports from DS
@@ -37,7 +37,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 type PreviewMode = "dark" | "light";
 type InputSize = "xs" | "sm" | "md" | "lg" | "xl";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -113,10 +113,10 @@ export default function PlaygroundIntentControlInputClient() {
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
     // DS props
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [disabled, setDisabled] = useState(false);
 
@@ -209,7 +209,7 @@ export default function PlaygroundIntentControlInputClient() {
             <SelectRow label="Intent">
                 <Select
                     value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
+                    onChange={(v) => setIntent(v as Intent)}
                     options={[
                         "informed",
                         "empowered",
@@ -225,7 +225,7 @@ export default function PlaygroundIntentControlInputClient() {
             <SelectRow label="Variant">
                 <Select
                     value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
+                    onChange={(v) => setVariant(v as Variant)}
                     options={["flat", "outlined", "elevated", "ghost"]}
                 />
             </SelectRow>
@@ -234,7 +234,7 @@ export default function PlaygroundIntentControlInputClient() {
                 <SelectRow label="Tone">
                     <Select
                         value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
+                        onChange={(v) => setTone(v as Tone)}
                         options={[
                             "slate",
                             "gray",
@@ -277,7 +277,7 @@ export default function PlaygroundIntentControlInputClient() {
                               : "false"
                     }
                     onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
+                        if (aestheticEnabled) return setGlow(v as Glow);
                         return setGlow(v === "true");
                     }}
                     options={[...glowOptions]}

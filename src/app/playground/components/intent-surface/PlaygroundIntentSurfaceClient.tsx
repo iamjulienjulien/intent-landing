@@ -12,18 +12,18 @@ import React, { useMemo, useState } from "react";
 import {
     IntentSurface,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
-
-    // ✅ docs exports from DS
+    type ToneStep,
     IntentSurfaceIdentity,
     IntentSurfacePropsTable,
 } from "intent-design-system";
 
 import { PlaygroundComponentShell } from "../_components/PlaygroundComponentShell";
+import PlaygroundComponentDesignControls from "../_components/PlaygroundComponentDesignControls";
 
 /* ============================================================================
    🧰 HELPERS
@@ -35,71 +35,6 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 type PreviewMode = "dark" | "light";
 
-function isAestheticGlow(glow: GlowName): boolean {
-    return (
-        glow === "aurora" ||
-        glow === "ember" ||
-        glow === "cosmic" ||
-        glow === "mythic" ||
-        glow === "royal" ||
-        glow === "mono"
-    );
-}
-
-function SelectRow({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="space-y-2">
-            <div className="text-xs tracking-[0.18em] opacity-55">{label}</div>
-            {children}
-        </div>
-    );
-}
-
-function Select({
-    value,
-    onChange,
-    options,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    options: string[];
-}) {
-    return (
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className={cn(
-                "w-full rounded-xl bg-black/25 ring-1 ring-white/10",
-                "px-3 py-2 text-sm opacity-85",
-                "focus:outline-none focus:ring-2 focus:ring-white/15"
-            )}
-        >
-            {options.map((o) => (
-                <option key={o} value={o}>
-                    {o}
-                </option>
-            ))}
-        </select>
-    );
-}
-
-function CheckboxRow({
-    label,
-    checked,
-    onChange,
-}: {
-    label: string;
-    checked: boolean;
-    onChange: (v: boolean) => void;
-}) {
-    return (
-        <label className="flex items-center gap-3 text-sm opacity-85">
-            <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-            {label}
-        </label>
-    );
-}
-
 /* ============================================================================
    ✅ MAIN
 ============================================================================ */
@@ -108,13 +43,14 @@ export default function PlaygroundIntentSurfaceClient() {
     // ✅ NEW: preview mode (drives shell tile bg + mode passed to the component)
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated");
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated");
 
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
 
     const [intensity, setIntensity] = useState<Intensity>("medium");
+    const [toneStep, setToneStep] = useState<ToneStep>(500);
     const [disabled, setDisabled] = useState(false);
 
     // Playground-only (nice to have for Surface)
@@ -123,13 +59,6 @@ export default function PlaygroundIntentSurfaceClient() {
 
     const toneEnabled = intent === "toned";
     const aestheticEnabled = intent === "glowed";
-
-    React.useEffect(() => {
-        if (!aestheticEnabled && typeof glow === "string" && isAestheticGlow(glow)) {
-            setGlow(false);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [aestheticEnabled]);
 
     const dsInput = useMemo(() => {
         return {
@@ -145,6 +74,7 @@ export default function PlaygroundIntentSurfaceClient() {
                   ? true
                   : undefined,
             intensity,
+            toneStep,
             disabled,
         } as const;
     }, [
@@ -156,146 +86,56 @@ export default function PlaygroundIntentSurfaceClient() {
         aestheticEnabled,
         glow,
         intensity,
+        toneStep,
         disabled,
     ]);
 
     const resolvedWithWarnings = useMemo(() => resolveIntentWithWarnings(dsInput), [dsInput]);
-
-    const glowOptions = aestheticEnabled
-        ? (["aurora", "ember", "cosmic", "mythic", "royal", "mono"] as const)
-        : (["false", "true"] as const);
 
     /* ============================================================================
        🧩 Controls split (DS vs Playground)
     ============================================================================ */
 
     const dsControls = (
-        <>
-            <SelectRow label="Mode">
-                <Select
-                    value={previewMode}
-                    onChange={(v) => setPreviewMode(v as PreviewMode)}
-                    options={["dark", "light"]}
-                />
-            </SelectRow>
-
-            <SelectRow label="Intent">
-                <Select
-                    value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
-                    options={[
-                        "informed",
-                        "empowered",
-                        "warned",
-                        "threatened",
-                        "themed",
-                        "toned",
-                        "glowed",
-                    ]}
-                />
-            </SelectRow>
-
-            <SelectRow label="Variant">
-                <Select
-                    value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
-                    options={["flat", "outlined", "elevated", "ghost"]}
-                />
-            </SelectRow>
-
-            {toneEnabled ? (
-                <SelectRow label="Tone">
-                    <Select
-                        value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
-                        options={[
-                            "slate",
-                            "gray",
-                            "zinc",
-                            "neutral",
-                            "stone",
-                            "red",
-                            "orange",
-                            "amber",
-                            "yellow",
-                            "lime",
-                            "green",
-                            "emerald",
-                            "teal",
-                            "cyan",
-                            "sky",
-                            "blue",
-                            "indigo",
-                            "violet",
-                            "purple",
-                            "fuchsia",
-                            "pink",
-                            "rose",
-                            "theme",
-                            "black",
-                        ]}
-                    />
-                    <div className="text-[11px] opacity-40">
-                        tone est appliqué uniquement quand{" "}
-                        <span className="font-mono">intent="toned"</span>
-                    </div>
-                </SelectRow>
-            ) : null}
-
-            <SelectRow label="Glow">
-                <Select
-                    value={
-                        aestheticEnabled
-                            ? typeof glow === "string"
-                                ? glow
-                                : "aurora"
-                            : glow === true
-                              ? "true"
-                              : "false"
-                    }
-                    onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
-                        return setGlow(v === "true");
-                    }}
-                    options={[...glowOptions]}
-                />
-            </SelectRow>
-
-            <SelectRow label="Intensity">
-                <Select
-                    value={intensity}
-                    onChange={(v) => setIntensity(v as Intensity)}
-                    options={["soft", "medium", "strong"]}
-                />
-            </SelectRow>
-
-            <SelectRow label="State">
-                <div className="space-y-2">
-                    <CheckboxRow label="disabled" checked={disabled} onChange={setDisabled} />
-                </div>
-            </SelectRow>
-        </>
+        <PlaygroundComponentDesignControls
+            previewMode={previewMode}
+            intent={intent}
+            variant={variant}
+            tone={tone}
+            glow={glow}
+            intensity={intensity}
+            toneStep={toneStep}
+            disabled={disabled}
+            onPreviewModeChange={setPreviewMode}
+            onIntentChange={setIntent}
+            onVariantChange={setVariant}
+            onToneChange={setTone}
+            onGlowChange={setGlow}
+            onIntensityChange={setIntensity}
+            onToneStepChange={setToneStep}
+            onDisabledChange={setDisabled}
+        />
     );
 
-    const extraControls = (
-        <>
-            <SelectRow label="Content">
-                <div className="space-y-2">
-                    <CheckboxRow
-                        label="withContent"
-                        checked={withContent}
-                        onChange={setWithContent}
-                    />
-                    <CheckboxRow label="padded" checked={padded} onChange={setPadded} />
-                </div>
+    // const extraControls = (
+    //     <>
+    //         <SelectRow label="Content">
+    //             <div className="space-y-2">
+    //                 <CheckboxRow
+    //                     label="withContent"
+    //                     checked={withContent}
+    //                     onChange={setWithContent}
+    //                 />
+    //                 <CheckboxRow label="padded" checked={padded} onChange={setPadded} />
+    //             </div>
 
-                <div className="mt-2 text-[11px] opacity-40">
-                    <span className="font-mono">IntentSurface</span> est un host: tu peux y mettre
-                    n’importe quel contenu. Ici on toggle juste padding + bloc de texte.
-                </div>
-            </SelectRow>
-        </>
-    );
+    //             <div className="mt-2 text-[11px] opacity-40">
+    //                 <span className="font-mono">IntentSurface</span> est un host: tu peux y mettre
+    //                 n’importe quel contenu. Ici on toggle juste padding + bloc de texte.
+    //             </div>
+    //         </SelectRow>
+    //     </>
+    // );
 
     // ✅ Code panel: copy/paste-ready snippet
     const codeString = useMemo(() => {
@@ -340,9 +180,8 @@ ${toneLine}${glowLine}      intensity="${intensity}"
             propsTable={IntentSurfacePropsTable}
             locale="fr"
             dsControls={dsControls}
-            extraControls={extraControls}
+            extraControls={null}
             warnings={resolvedWithWarnings.warnings}
-            resolvedJson={resolvedWithWarnings}
             previewMode={previewMode}
             codeString={codeString}
             renderPreview={(mode) => (

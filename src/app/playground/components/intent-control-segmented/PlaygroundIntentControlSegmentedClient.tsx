@@ -11,10 +11,10 @@ import React, { useMemo, useState } from "react";
 import {
     IntentControlSegmented,
     resolveIntentWithWarnings,
-    type IntentName,
-    type VariantName,
-    type ToneName,
-    type GlowName,
+    type Intent,
+    type Variant,
+    type Tone,
+    type Glow,
     type Intensity,
 
     // ✅ docs exports from DS
@@ -36,7 +36,7 @@ type PreviewMode = "dark" | "light";
 type SegSize = "xs" | "sm" | "md" | "lg" | "xl";
 type SegVariant = "ghost" | "outlined" | "flat" | "elevated";
 
-function isAestheticGlow(glow: GlowName): boolean {
+function isAestheticGlow(glow: Glow): boolean {
     return (
         glow === "aurora" ||
         glow === "ember" ||
@@ -114,11 +114,11 @@ export default function PlaygroundIntentControlSegmentedClient() {
     const [previewMode, setPreviewMode] = useState<PreviewMode>("dark");
 
     // DS controls
-    const [intent, setIntent] = useState<IntentName>("informed");
-    const [variant, setVariant] = useState<VariantName>("elevated"); // not used by component, but used for warnings exploration
+    const [intent, setIntent] = useState<Intent>("informed");
+    const [variant, setVariant] = useState<Variant>("elevated"); // not used by component, but used for warnings exploration
 
-    const [tone, setTone] = useState<ToneName>("emerald");
-    const [glow, setGlow] = useState<boolean | GlowName>(false);
+    const [tone, setTone] = useState<Tone>("emerald");
+    const [glow, setGlow] = useState<boolean | Glow>(false);
 
     const [intensity, setIntensity] = useState<Intensity>("medium");
     const [dsDisabled, setDsDisabled] = useState(false);
@@ -216,7 +216,7 @@ export default function PlaygroundIntentControlSegmentedClient() {
             <SelectRow label="Intent">
                 <Select
                     value={intent}
-                    onChange={(v) => setIntent(v as IntentName)}
+                    onChange={(v) => setIntent(v as Intent)}
                     options={[
                         "informed",
                         "empowered",
@@ -233,7 +233,7 @@ export default function PlaygroundIntentControlSegmentedClient() {
             <SelectRow label="Variant (DS)">
                 <Select
                     value={variant}
-                    onChange={(v) => setVariant(v as VariantName)}
+                    onChange={(v) => setVariant(v as Variant)}
                     options={["flat", "outlined", "elevated", "ghost"]}
                 />
             </SelectRow>
@@ -242,7 +242,7 @@ export default function PlaygroundIntentControlSegmentedClient() {
                 <SelectRow label="Tone (DS)">
                     <Select
                         value={tone}
-                        onChange={(v) => setTone(v as ToneName)}
+                        onChange={(v) => setTone(v as Tone)}
                         options={[
                             "slate",
                             "gray",
@@ -285,7 +285,7 @@ export default function PlaygroundIntentControlSegmentedClient() {
                               : "false"
                     }
                     onChange={(v) => {
-                        if (aestheticEnabled) return setGlow(v as GlowName);
+                        if (aestheticEnabled) return setGlow(v as Glow);
                         return setGlow(v === "true");
                     }}
                     options={[...glowOptions]}

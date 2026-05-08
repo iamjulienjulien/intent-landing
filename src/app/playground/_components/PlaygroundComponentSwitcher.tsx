@@ -26,7 +26,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
     return classes.filter(Boolean).join(" ");
 }
 
-function badgeEmoji(badge: string) {
+function badgeEmoji(badge: string): string {
     const b = badge.toLowerCase();
     if (b === "surface") return "🧱";
     if (b === "control") return "🕹️";
@@ -34,6 +34,10 @@ function badgeEmoji(badge: string) {
     if (b === "indicator") return "🚦";
     if (b === "feedback") return "🔔";
     if (b === "data") return "🧬";
+    if (b === "visualization") return "📊";
+    if (b === "design") return "🎨";
+    if (b === "genealogy") return "🌳";
+    if (b === "content") return "🖋️";
     return "✨";
 }
 
